@@ -1,0 +1,73 @@
+# @package _global_
+model:
+  name: CT
+  multi:                                  # Missing hyperparameters are to be filled in command line / with tune_hparams = True / selected with +backbone/ct_hparams=...
+    _target_: src.models.ct.CT
+    max_seq_length: ${sum:${dataset.max_seq_length},${dataset.projection_horizon}}  # Will be calculated dynamically
+    seq_hidden_units:                    # transformer hidden units (d_h / d_model)
+    br_size:
+    fc_hidden_units:
+    dropout_rate:                        # Dropout between transformer layers + output layers + attentional dropout
+    num_layer: 1
+    num_heads: 2
+    max_grad_norm:
+    batch_size:
+    attn_dropout: True
+    disable_cross_attention: False
+    isolate_subnetwork: _
+    self_positional_encoding:
+      absolute: False
+      trainable: True
+      max_relative_position: 15
+    optimizer:
+      optimizer_cls: adam
+      learning_rate:
+      weight_decay: 0.0
+      lr_scheduler: False
+
+    augment_with_masked_vitals: True
+
+    tune_hparams: False
+    tune_range: 2
+    hparams_grid:
+      num_layer:
+        - 1
+      num_heads:
+        - 2
+      learning_rate:
+        - 0.01
+        - 0.001
+        - 0.0001
+      batch_size:
+        - 64
+        - 128
+        - 256
+      seq_hidden_units:
+        - 1.0
+        - 2.0
+        - 3.0
+        - 4.0
+      br_size:
+        - 0.5
+        - 1.0
+        - 2.0
+        - 3.0
+        - 4.0
+      fc_hidden_units:
+        - 0.5
+        - 1.0
+        - 2.0
+        - 3.0
+        - 4.0
+      dropout_rate:
+        - 0.1
+        - 0.2
+        - 0.3
+        - 0.4
+        - 0.5
+    resources_per_trial:
+
+exp:
+  weights_ema: True
+  balancing: domain_confusion
+  alpha: 0.01
