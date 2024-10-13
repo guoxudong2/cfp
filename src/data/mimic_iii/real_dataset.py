@@ -516,10 +516,34 @@ class MIMIC3RealDatasetCollection(RealDatasetCollection):
                                        max_number=max_number, data_seed=seed, **kwargs)
 
         logger.info(f'AAAAreal_dataset: treatments.shape {treatments.shape}, outcomes.shape {outcomes.shape}, vitals.shape{vitals.shape}, coso_vitals.shape {coso_vitals.shape}2222')
-        logger.info(f'static_features.shape: {static_features.shape}')
+        #             AAAAreal_dataset: treatments.shape (261137, 1),        outcomes.shape (261137, 1),      vitals.shape(261137, 25),    coso_vitals.shape (261137, 25)2222
+        logger.info(f'static_features.shape: {static_features.shape}') #(5000, 44)
         logger.info(f'static_features.cloumns: {static_features.columns}')
+        '''Index(['F', 'M', 'AMERICAN INDIAN/ALASKA NATIVE',
+       'AMERICAN INDIAN/ALASKA NATIVE FEDERALLY RECOGNIZED TRIBE', 'ASIAN',
+       'ASIAN - ASIAN INDIAN', 'ASIAN - CAMBODIAN', 'ASIAN - CHINESE',
+       'ASIAN - FILIPINO', 'ASIAN - JAPANESE', 'ASIAN - KOREAN',
+       'ASIAN - OTHER', 'ASIAN - THAI', 'ASIAN - VIETNAMESE', 'BLACK/AFRICAN',
+       'BLACK/AFRICAN AMERICAN', 'BLACK/CAPE VERDEAN', 'BLACK/HAITIAN',
+       'CARIBBEAN ISLAND', 'HISPANIC OR LATINO',
+       'HISPANIC/LATINO - CENTRAL AMERICAN (OTHER)',
+       'HISPANIC/LATINO - COLOMBIAN', 'HISPANIC/LATINO - CUBAN',
+       'HISPANIC/LATINO - DOMINICAN', 'HISPANIC/LATINO - GUATEMALAN',
+       'HISPANIC/LATINO - HONDURAN', 'HISPANIC/LATINO - MEXICAN',
+       'HISPANIC/LATINO - PUERTO RICAN', 'HISPANIC/LATINO - SALVADORAN',
+       'MIDDLE EASTERN', 'MULTI RACE ETHNICITY',
+       'NATIVE HAWAIIAN OR OTHER PACIFIC ISLANDER', 'OTHER',
+       'PATIENT DECLINED TO ANSWER', 'PORTUGUESE', 'SOUTH AMERICAN',
+       'UNABLE TO OBTAIN', 'UNKNOWN/NOT SPECIFIED', 'WHITE',
+       'WHITE - BRAZILIAN', 'WHITE - EASTERN EUROPEAN',
+       'WHITE - OTHER EUROPEAN', 'WHITE - RUSSIAN', 'age'],
+      dtype='object')'''
         logger.info(f'static_features.head: {static_features.head(5)}')
         logger.info(f'static_features.index: {static_features.index}')
+        ''''[    3,     6,    23,    26,    32,    41,    52,    55,    65,
+            99573, 99633, 99693, 99777, 99810, 99819, 99864, 99881, 99934,
+            99939]'''
+
         # Train/val/test random_split
         static_features, static_features_test = train_test_split(static_features, test_size=split['test'], random_state=seed)
         treatments, outcomes, vitals, outcomes_unscaled, treatments_test, outcomes_test, vitals_test, outcomes_unscaled_test, coso_vitals, coso_vitals_test = \
@@ -535,18 +559,60 @@ class MIMIC3RealDatasetCollection(RealDatasetCollection):
             coso_vitals.loc[static_features_test.index]
         #Prepare data to compute S
         logger.info(f'BBBBtreatments: {treatments.shape}, outcomes: {outcomes.shape}, coso_vitals: {coso_vitals.shape}')
+        #             BBBBtreatments: (221894, 1),        outcomes: (221894, 1),      coso_vitals: (221894, 25)
+        logger.info(f'treatments.head(): {treatments.head()}, treatments index {treatments.index}')
+        #treatments.head():                      vaso
+        # subject_id hours_in
+        #   63430      0            0
+        #              1            0
+        #              2            0
+        #              3            0
+        #              4            0,        treatments index
+        #MultiIndex([(63430,  0),
+        #    (63430,  1),
+        #    (63430,  2),
+        #    (63430,  3),
+        #    (63430,  4),
+        #    (63430,  5),
+        #    (63430,  6),
+        #    (63430,  7),
+        #    (63430,  8),
+        #    (63430,  9),
+        #    ...
+        #    ( 2262, 50),
+        #    ( 2262, 51),
+        #    ( 2262, 52),
+        #    ( 2262, 53),
+        #    ( 2262, 54),
+        #    ( 2262, 55),
+        #    ( 2262, 56),
+        #    ( 2262, 57),
+        #    ( 2262, 58),
+        #    ( 2262, 59)],
+        #   names=['subject_id', 'hours_in'], length=221894)
         user_sizes = treatments.index.get_level_values(0).value_counts().sort_index()
+        logger.info(f'user_sizes shape: {user_sizes.shape}, user_sizes index: {user_sizes.index}')
+        #user_sizes shape: (4250,),
+        #                                                  user_sizes index:
+        #Int64Index([    3,     6,    23,    26,    32,    52,    55,    65,    68,
+        #       71,
+        #    ...
+        #    99545, 99573, 99633, 99693, 99777, 99810, 99819, 99864, 99934,
+        #    99939],
+        #   dtype='int64', length=4250)
         treatments_processed = treatments.unstack(fill_value=np.nan, level=0).stack(dropna=False).swaplevel(0, 1).sort_index()
         outcomes_processed = outcomes.unstack(fill_value=np.nan, level=0).stack(dropna=False).swaplevel(0, 1).sort_index()
         coso_vitals_processed = coso_vitals.unstack(fill_value=np.nan, level=0).stack(dropna=False).swaplevel(0, 1).sort_index()
         active_entries = (~treatments_processed.isna().any(axis=1)).astype(float)
         logger.info(f'XXXXtreatments_processed: {treatments_processed.shape}, outcomes_processed: {outcomes_processed.shape}, coso_vitals_processed: {coso_vitals_processed.shape}, active_entries: {active_entries.shape}')
+        #             XXXXtreatments_processed: (255000, 1),                  outcomes_processed: (255000, 1),                coso_vitals_processed: (255000, 25),                  active_entries: (255000,)
 
         treatments_np = treatments_processed.fillna(0.0).values.reshape((len(user_sizes), max(user_sizes), -1)).astype(float)
         outcomes_np = outcomes_processed.fillna(0.0).values.reshape((len(user_sizes), max(user_sizes), -1))
         coso_vitals_np = coso_vitals_processed.fillna(0.0).values.reshape((len(user_sizes), max(user_sizes), -1))
         active_entries_np = active_entries.values.reshape((len(user_sizes), max(user_sizes), 1))
         logger.info(f'treatments_np: {treatments_np.shape}, outcomes_np: {outcomes_np.shape}, coso_vitals_np: {coso_vitals_np.shape}, active_entries_np: {active_entries_np.shape}1111')
+        #             treatments_np: (4250, 60, 1),         outcomes_np: (4250, 60, 1),       coso_vitals_np: (4250, 60, 25),         active_entries_np: (4250, 60, 1)1111
         COSO_index = find_S_variable(treatments_np, outcomes_np, coso_vitals_np, active_entries_np)
         COSO_index = 16
         if split['val'] > 0.0:

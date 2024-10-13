@@ -624,11 +624,36 @@ class ClimateRealDatasetCollection(RealDatasetCollection):
                                        max_seq_length=max_seq_length,
                                        max_number=max_number, data_seed=seed, **kwargs)
         logger.info(f'AAAAreal_dataset: treatments.shape {treatments.shape}, outcomes.shape {outcomes.shape}, vitals.shape{vitals.shape}, coso_vitals.shape {coso_vitals.shape}2222')
+        #             AAAAreal_dataset: treatments.shape (12000, 1),         outcomes.shape (12000, 1),       vitals.shape(12000, 6),     coso_vitals.shape (12000, 6)2222
         # Train/val/test random_split
-        logger.info(f'static_features.shape: {static_features.shape}')
-        logger.info(f'static_features.cloumns: {static_features.columns}')
-        logger.info(f'static_features.head: {static_features.head(5)}')
+        logger.info(f'static_features.shape: {static_features.shape}')#(24000, 0)
+        logger.info(f'static_features.cloumns: {static_features.columns}')#Index([], dtype='object')
+        logger.info(f'static_features.head: {static_features.head(5)}')#Empty DataFrame
         logger.info(f'static_features.index: {static_features.index}')
+        '''
+        MultiIndex([( 37.1422004699707, 281.25),
+            ( 37.1422004699707, 281.25),
+            ( 37.1422004699707, 281.25),
+            ( 37.1422004699707, 281.25),
+            ( 37.1422004699707, 281.25),
+            ( 37.1422004699707, 281.25),
+            ( 37.1422004699707, 281.25),
+            ( 37.1422004699707, 281.25),
+            ( 37.1422004699707, 281.25),
+            ( 37.1422004699707, 281.25),
+            ...
+            (35.23749923706055, 236.25),
+            (35.23749923706055, 236.25),
+            (35.23749923706055, 236.25),
+            (35.23749923706055, 236.25),
+            (35.23749923706055, 236.25),
+            (35.23749923706055, 236.25),
+            (35.23749923706055, 236.25),
+            (35.23749923706055, 236.25),
+            (35.23749923706055, 236.25),
+            (35.23749923706055, 236.25)],
+           names=['lat', 'lon'], length=24000)
+        '''
         #static_features, static_features_test = train_test_split(static_features, test_size=split['test'],
         #                                                         random_state=seed)
         static_features, static_features_test = train_test_split(treatments, test_size=split['test'],
@@ -651,15 +676,62 @@ class ClimateRealDatasetCollection(RealDatasetCollection):
         #outcomes_processed = outcomes.unstack(fill_value=np.nan, level=0).stack(dropna=False).swaplevel(0,1).sort_index()
         #coso_vitals_processed = coso_vitals.unstack(fill_value=np.nan, level=0).stack(dropna=False).swaplevel(0,1).sort_index()
         logger.info(f'BBBBtreatments: {treatments.shape}, outcomes: {outcomes.shape}, coso_vitals: {coso_vitals.shape}')
+        #             BBBBtreatments: (612000, 1),        outcomes: (612000, 1),       coso_vitals: (612000, 6)
+        logger.info(f'treatments.head(): {treatments.head()}, treatments index {treatments.index}')
+        #treatments.head():                   cfnlf
+        #    lat     lon
+        #    42.8564 292.5  0.494821
+        #            292.5  0.577254
+        #            292.5  0.496116
+        #            292.5  0.439132
+        #            292.5  0.374663
+        #treatments index MultiIndex([(42.85639953613281,  292.5),
+        #    (42.85639953613281,  292.5),
+        #    (42.85639953613281,  292.5),
+        #    (42.85639953613281,  292.5),
+        #    (42.85639953613281,  292.5),
+        #    (42.85639953613281,  292.5),
+        #    (42.85639953613281,  292.5),
+        #    (42.85639953613281,  292.5),
+        #    (42.85639953613281,  292.5),
+        #    (42.85639953613281,  292.5),
+        #    ...
+        #    ( 31.4281005859375, 258.75),
+        #    ( 31.4281005859375, 258.75),
+        #    ( 31.4281005859375, 258.75),
+        #    ( 31.4281005859375, 258.75),
+        #    ( 31.4281005859375, 258.75),
+        #    ( 31.4281005859375, 258.75),
+        #    ( 31.4281005859375, 258.75),
+        #    ( 31.4281005859375, 258.75),
+        #    ( 31.4281005859375, 258.75),
+        #    ( 31.4281005859375, 258.75)],
+        #   names=['lat', 'lon'], length=612000)
         user_sizes = treatments.index.value_counts().sort_index()
+        logger.info(f'user_sizes shape: {user_sizes.shape}, user_sizes index: {user_sizes.index}')
+        #             user_sizes shape: (200,),
+        #                                                   user_sizes index:
+        #Index([  (25.71389961242676, 236.25),  (25.71389961242676, 238.125),
+        #         (25.71389961242676, 245.625),    (25.71389961242676, 247.5),
+        #           (25.71389961242676, 255.0),   (25.71389961242676, 258.75),
+        #         (25.71389961242676, 268.125),  (25.71389961242676, 271.875),
+        #          (25.71389961242676, 273.75),  (25.71389961242676, 275.625),
+        #        ...
+        #          (48.570499420166016, 255.0), (48.570499420166016, 256.875),
+        #          (48.570499420166016, 262.5),  (48.570499420166016, 266.25),
+        #          (48.570499420166016, 270.0), (48.570499420166016, 271.875),
+        #        (48.570499420166016, 275.625),   (48.570499420166016, 277.5),
+        #        (48.570499420166016, 290.625),   (48.570499420166016, 292.5)],
+        #       dtype='object', length=200)
         treatments_processed = treatments.sort_index()
         outcomes_processed = outcomes.sort_index()
         coso_vitals_processed = coso_vitals.sort_index()
         active_entries = (~treatments_processed.isna().any(axis=1)).astype(float)
-        logger.info(
-            f'XXXXtreatments_processed: {treatments_processed.shape}, outcomes_processed: {outcomes_processed.shape}, coso_vitals_processed: {coso_vitals_processed.shape}, active_entries: {active_entries.shape}')
+        logger.info(f'XXXXtreatments_processed: {treatments_processed.shape}, outcomes_processed: {outcomes_processed.shape}, coso_vitals_processed: {coso_vitals_processed.shape}, active_entries: {active_entries.shape}')
+        #             XXXXtreatments_processed: (612000, 1),                  outcomes_processed: (612000, 1),                coso_vitals_processed: (612000, 6),                   active_entries: (612000,)
 
         treatments_np = treatments_processed.fillna(0.0).values.reshape((len(user_sizes), max(user_sizes), -1)).astype(float)
+        #ValueError: cannot reshape array of size 612000 into shape (200,3540,newaxis)
         outcomes_np = outcomes_processed.fillna(0.0).values.reshape((len(user_sizes), max(user_sizes), -1))
         coso_vitals_np = coso_vitals_processed.fillna(0.0).values.reshape((len(user_sizes), max(user_sizes), -1))
         active_entries_np = active_entries.values.reshape((len(user_sizes), max(user_sizes), 1))
