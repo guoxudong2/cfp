@@ -71,11 +71,13 @@ class CRN(BRCausalModel):
             self.term_a = MINE(self.dim_abstract_confounders+self.dim_s, self.dim_treatments)
             self.term_b = MINE(self.dim_abstract_confounders+self.dim_treatments, self.dim_outcome)
             self.term_S = ConditionalMINE(self.dim_s, self.dim_outcome,self.dim_abstract_confounders+self.dim_treatments)
+            logger.info(f'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
             self.lstm_confounder = AutoRegressiveLSTM(input_size=self.dim_Adjustmentvitals+1,
                                                     hidden_size=self.seq_hidden_units,
                                                     output_size=self.dim_abstract_confounders,dropout_rate=self.dropout_rate
                                                     )
 
+            logger.info(f'YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY')
             self.trainable_h0, self.trainable_c0, self.trainable_z0 = self.trainable_param()
 
 
@@ -269,6 +271,7 @@ class CFP(CRN):
                 output, _ = self.forward(batch)
                 all_outputs.append(output) 
         all_outputs = torch.cat(all_outputs, dim=0)
+        logger.info(f'dataset name {dataset.subset_name}, all_outputs shape {all_outputs.shape}')
 
         return all_outputs
 

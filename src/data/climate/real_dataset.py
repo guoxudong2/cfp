@@ -43,17 +43,20 @@ class ClimateRealDataset(Dataset):
         assert treatments.shape[0] == outcomes.shape[0]
         assert outcomes.shape[0] == vitals.shape[0]
 
+        logger.info(f'Initializing ClimateRealDataset {subset_name}!!!!')
         self.subset_name = subset_name
-        user_sizes = vitals.groupby('subject_id').size()
+        user_sizes = vitals.groupby(level=[0,1]).size()
 
         # Padding with nans
-        treatments = treatments.unstack(fill_value=np.nan, level=0).stack(dropna=False).swaplevel(0, 1).sort_index()
+        #我数据集没nan，所以注释掉
+        '''treatments = treatments.unstack(fill_value=np.nan, level=0).stack(dropna=False).swaplevel(0, 1).sort_index()
         outcomes = outcomes.unstack(fill_value=np.nan, level=0).stack(dropna=False).swaplevel(0, 1).sort_index()
         vitals = vitals.unstack(fill_value=np.nan, level=0).stack(dropna=False).swaplevel(0, 1).sort_index()
         outcomes_unscaled = outcomes_unscaled.unstack(fill_value=np.nan, level=0).stack(dropna=False).swaplevel(0, 1).sort_index()
+        coso_vitals=coso_vitals.unstack(fill_value=np.nan, level=0).stack(dropna=False).swaplevel(0, 1).sort_index()'''
         active_entries = (~treatments.isna().any(axis=1)).astype(float)
-        coso_vitals=coso_vitals.unstack(fill_value=np.nan, level=0).stack(dropna=False).swaplevel(0, 1).sort_index()
-        static_features = static_features.sort_index()
+        #static_features = static_features.sort_index()
+        static_features = treatments.sort_index()
         user_sizes = user_sizes.sort_index()
 
         # Conversion to np.arrays
@@ -656,20 +659,33 @@ class ClimateRealDatasetCollection(RealDatasetCollection):
         '''
         #static_features, static_features_test = train_test_split(static_features, test_size=split['test'],
         #                                                         random_state=seed)
-        static_features, static_features_test = train_test_split(treatments, test_size=split['test'],
+        static_features, static_features_test = train_test_split(treatments.index.unique(), test_size=split['test'],
                                                                  random_state=seed)
-
+        logger.info(f'static features is unique: {static_features.is_unique}')
+        logger.info(f'static features_test is unique: {static_features_test.is_unique}')
+        logger.info(f'static features shape: {static_features.shape}')
+        logger.info(f'static features_test shape: {static_features_test.shape}')
         treatments, outcomes, vitals, outcomes_unscaled, treatments_test, outcomes_test, vitals_test, outcomes_unscaled_test, coso_vitals, coso_vitals_test = \
-            treatments.loc[static_features.index], \
-                outcomes.loc[static_features.index], \
-                vitals.loc[static_features.index], \
-                outcomes_unscaled.loc[static_features.index], \
-                treatments.loc[static_features_test.index], \
-                outcomes.loc[static_features_test.index], \
-                vitals.loc[static_features_test.index], \
-                outcomes_unscaled.loc[static_features_test.index], \
-                coso_vitals.loc[static_features.index], \
-                coso_vitals.loc[static_features_test.index]
+            treatments.loc[static_features], \
+                outcomes.loc[static_features], \
+                vitals.loc[static_features], \
+                outcomes_unscaled.loc[static_features], \
+                treatments.loc[static_features_test], \
+                outcomes.loc[static_features_test], \
+                vitals.loc[static_features_test], \
+                outcomes_unscaled.loc[static_features_test], \
+                coso_vitals.loc[static_features], \
+                coso_vitals.loc[static_features_test]
+            #treatments.loc[static_features.index], \
+            #    outcomes.loc[static_features.index], \
+            #    vitals.loc[static_features.index], \
+            #    outcomes_unscaled.loc[static_features.index], \
+            #    treatments.loc[static_features_test.index], \
+            #    outcomes.loc[static_features_test.index], \
+            #    vitals.loc[static_features_test.index], \
+            #    outcomes_unscaled.loc[static_features_test.index], \
+            #    coso_vitals.loc[static_features.index], \
+            #    coso_vitals.loc[static_features_test.index]
         # Prepare data to compute S
         #user_sizes = treatments.index.get_level_values(0).value_counts().sort_index()
         #treatments_processed = treatments.unstack(fill_value=np.nan, level=0).stack(dropna=False).swaplevel(0,1).sort_index()
@@ -707,6 +723,7 @@ class ClimateRealDatasetCollection(RealDatasetCollection):
         #    ( 31.4281005859375, 258.75),
         #    ( 31.4281005859375, 258.75)],
         #   names=['lat', 'lon'], length=612000)
+        logger.info(f'CCCCtreatments_test: {treatments_test.shape}, outcomes_test: {outcomes_test.shape}, coso_vitals_test: {coso_vitals_test.shape}')
         user_sizes = treatments.index.value_counts().sort_index()
         logger.info(f'user_sizes shape: {user_sizes.shape}, user_sizes index: {user_sizes.index}')
         #             user_sizes shape: (200,),
@@ -737,23 +754,36 @@ class ClimateRealDatasetCollection(RealDatasetCollection):
         active_entries_np = active_entries.values.reshape((len(user_sizes), max(user_sizes), 1))
         logger.info(f'treatments_np: {treatments_np.shape}, outcomes_np: {outcomes_np.shape}, coso_vitals_np: {coso_vitals_np.shape}, active_entries_np: {active_entries_np.shape}1111')
         COSO_index = find_S_variable(treatments_np, outcomes_np, coso_vitals_np, active_entries_np)
-        COSO_index = 16
+        #COSO_index = 16
         if split['val'] > 0.0:
-            static_features_train, static_features_val = train_test_split(static_features,
+            #static_features_train, static_features_val = train_test_split(static_features,
+            static_features_train, static_features_val = train_test_split(treatments.index.unique(),
                                                                           test_size=split['val'] / (1 - split['test']),
                                                                           random_state=2 * seed)
+            logger.info(f'len(treatments.index.unique()): {len(treatments.index.unique())},len(static_features_train, static_features_val): {len(static_features_train), len(static_features_val)}')
+
             treatments_train, outcomes_train, vitals_train, outcomes_unscaled_train, treatments_val, outcomes_val, vitals_val, \
                 outcomes_unscaled_val, coso_vitals_train, coso_vitals_val = \
-                treatments.loc[static_features_train.index], \
-                    outcomes.loc[static_features_train.index], \
-                    vitals.loc[static_features_train.index], \
-                    outcomes_unscaled.loc[static_features_train.index], \
-                    treatments.loc[static_features_val.index], \
-                    outcomes.loc[static_features_val.index], \
-                    vitals.loc[static_features_val.index], \
-                    outcomes_unscaled.loc[static_features_val.index], \
-                    coso_vitals.loc[static_features_train.index], \
-                    coso_vitals.loc[static_features_val.index]
+                treatments.loc[static_features_train], \
+                    outcomes.loc[static_features_train], \
+                    vitals.loc[static_features_train], \
+                    outcomes_unscaled.loc[static_features_train], \
+                    treatments.loc[static_features_val], \
+                    outcomes.loc[static_features_val], \
+                    vitals.loc[static_features_val], \
+                    outcomes_unscaled.loc[static_features_val], \
+                    coso_vitals.loc[static_features_train], \
+                    coso_vitals.loc[static_features_val]
+                #treatments.loc[static_features_train.index], \
+                #    outcomes.loc[static_features_train.index], \
+                #    vitals.loc[static_features_train.index], \
+                #    outcomes_unscaled.loc[static_features_train.index], \
+                #    treatments.loc[static_features_val.index], \
+                #    outcomes.loc[static_features_val.index], \
+                #    vitals.loc[static_features_val.index], \
+                #    outcomes_unscaled.loc[static_features_val.index], \
+                #    coso_vitals.loc[static_features_train.index], \
+                #    coso_vitals.loc[static_features_val.index]
         else:
             static_features_train = static_features
             treatments_train, outcomes_train, vitals_train, outcomes_unscaled_train, coso_vitals_train = \
@@ -765,6 +795,8 @@ class ClimateRealDatasetCollection(RealDatasetCollection):
         if split['val'] > 0.0:
             self.val_f = ClimateRealDataset(treatments_val, outcomes_val, vitals_val, static_features_val,
                                            outcomes_unscaled_val, scaling_params, 'val', coso_vitals_val, COSO_index)
+            if self.val_f is None:
+                logger.error('Validation dataset (self.val_f) is None!')
         self.test_f = ClimateRealDataset(treatments_test, outcomes_test, vitals_test, static_features_test,
                                         outcomes_unscaled_test, scaling_params, 'test', coso_vitals_test, COSO_index)
 

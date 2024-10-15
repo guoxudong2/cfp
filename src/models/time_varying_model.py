@@ -160,10 +160,17 @@ class TimeVaryingCausalModel(LightningModule):
 
     def train_dataloader(self) -> DataLoader:
         sub_args = self.hparams.model[self.model_type]
-        return DataLoader(self.dataset_collection.train_f, shuffle=True, batch_size=sub_args['batch_size'], drop_last=True)
+        #logger.info(f'sub_args = {sub_args}')
+        #a= DataLoader(self.dataset_collection.train_f, shuffle=True, batch_size=sub_args['batch_size'], drop_last=True)
+        #logger.info(f"Train DataLoader Length: {len(a)}")
+        #return a
+        return DataLoader(self.dataset_collection.train_f, shuffle=True, batch_size=sub_args['batch_size'], drop_last=False)
 
     def val_dataloader(self) -> DataLoader:
-        return DataLoader(self.dataset_collection.val_f, batch_size=self.hparams.dataset.val_batch_size)
+        #b= DataLoader(self.dataset_collection.val_f, batch_size=self.hparams.dataset.val_batch_size, drop_last=False)
+        #logger.info(f"Validation DataLoader Length: {len(b)}")
+        #return b
+        return DataLoader(self.dataset_collection.val_f, batch_size=self.hparams.dataset.val_batch_size, drop_last=False)
 
     def get_predictions(self, dataset: Dataset) -> np.array:
         raise NotImplementedError()

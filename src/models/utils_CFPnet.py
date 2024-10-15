@@ -98,7 +98,8 @@ class AutoRegressiveLSTM(nn.Module):
             out_dropout = torch.bernoulli(output_t.data.new(output_t.data.size()).fill_(1 - self.dropout_rate)) / (1 - self.dropout_rate)
         for t in range(seq_len):
             effective_batch = (sequence_length > t).float().to(device)
-            effective_batch = effective_batch.unsqueeze(-1)       
+            effective_batch = effective_batch.unsqueeze(-1)
+            #print(f'x.shape: {x.shape}, output_t.shape: {output_t.shape}, effective_batch.shape: {effective_batch.shape}')
             lstm_input = torch.cat((x[:, t:t+1, :] * effective_batch, output_t), dim=-1)
             lstm_out, (hn, cn) = self.lstm(lstm_input, (hn, cn))
             if self.training:

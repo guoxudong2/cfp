@@ -85,13 +85,19 @@ def load_climate_data_processed(data_path: str,
         ]
 
     treatments = df[treatment_list]
+    logger.info(f'treatment shape1 {treatments.shape}')
     all_vitals = df[outcome_list + vital_list]
     static_features = df[static_list]
 
+    logger.info(f'df index len: {len(df.index)}, is unique: {df.index.is_unique}')
     # 如果需要基于lat进行过滤（假设lat是ID）
     #lat_group_sizes = df.groupby('lat').size()
+    lat_group_indexs = df.groupby(level=[0,1])
+    logger.info(f'lat_group_indexs: {lat_group_indexs}')
     lat_group_sizes = df.groupby(level=[0,1]).size()
+    logger.info(f'lat_group_sizes shape: {lat_group_sizes.shape}')
     filtered_ids = lat_group_sizes.index[lat_group_sizes >= min_seq_length] if min_seq_length is not None else lat_group_sizes.index
+    logger.info(f'filtered_ids shape: {filtered_ids.shape}')#403
 
     # 如果定义了最大数量，进行随机选择
     if max_number is not None:
@@ -99,10 +105,12 @@ def load_climate_data_processed(data_path: str,
             max_number = len(filtered_ids)
         np.random.seed(data_seed)
         filtered_ids = np.random.choice(filtered_ids, size=max_number, replace=False)
+        logger.info(f'filtered_ids shape: {filtered_ids.shape}')
 
     #treatments = treatments[df['lat'].isin(filtered_ids)]
     #all_vitals = all_vitals[df['lat'].isin(filtered_ids)]
 
+    logger.info(f'filtered_ids shape: {filtered_ids.shape}')
     treatments = treatments.loc[filtered_ids]
     all_vitals = all_vitals.loc[filtered_ids]
 
@@ -113,6 +121,8 @@ def load_climate_data_processed(data_path: str,
     if max_seq_length is not None:
         treatments = treatments.groupby(level=[0,1]).head(max_seq_length)
         all_vitals = all_vitals.groupby(level=[0,1]).head(max_seq_length)
+        logger.info(f'treatment shape2 {treatments.shape}, treatment: {treatments.head(2)}')
+        #                               (12000,1)
 
     #static_features = static_features[df['lat'].isin(filtered_ids)]
     static_features = static_features.loc[filtered_ids]
@@ -146,6 +156,7 @@ def load_climate_data_processed(data_path: str,
     logger.info(f'len(filtered_ids: {len(filtered_ids)}.')
     logger.info(f'filtered_ids: {filtered_ids}.')
     logger.info(f'treatments.shape {treatments.shape}, outcomes.shape {outcomes.shape}, vitals.shape{vitals.shape}, coso_vitals.shape {coso_vitals.shape}2222')
+    #                               (12000,1)
     logger.info(f'treatments.head5 {treatments.head(125)}, outcomes.head5 {outcomes.head(125)}, vitals.head5{vitals.head(125)}, coso_vitals.shape {coso_vitals.shape}2222')
     return treatments, outcomes, vitals, static_features, outcomes_unscaled, scaling_params, coso_vitals
 

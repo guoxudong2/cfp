@@ -74,7 +74,20 @@ def main(args: DictConfig):
     val_cosovitals= coso_model.process_full_dataset(dataset_collection.val_f)
     test_cosovitals = coso_model.process_full_dataset(dataset_collection.test_f)
     # Replace original covariates by time-varying adjustment representation
+    print("Before replacing vitals:")
+    for key, value in dataset_collection.train_f.data.items():
+        if isinstance(value, torch.Tensor) or hasattr(value, 'shape'):
+            print(f"{key}: Shape = {value.shape}")
+        else:
+            print(f"{key}: Length = {len(value)}")
+
     dataset_collection.train_f.data['vitals'] = train_cosovitals
+    print("After replacing vitals:")
+    for key, value in dataset_collection.train_f.data.items():
+        if isinstance(value, torch.Tensor) or hasattr(value, 'shape'):
+            print(f"{key}: Shape = {value.shape}")
+        else:
+            print(f"{key}: Length = {len(value)}")
     dataset_collection.val_f.data['vitals'] = val_cosovitals
     dataset_collection.test_f.data['vitals'] = test_cosovitals
     if hasattr(dataset_collection, 'test_cf_one_step'): 
@@ -90,8 +103,10 @@ def main(args: DictConfig):
     encoder_results = {}
 
     # Validation factual rmse
-    val_dataloader = DataLoader(dataset_collection.val_f, batch_size=args.dataset.val_batch_size, shuffle=False)
+    logger.info(f'111111111111111111111')
+    val_dataloader = DataLoader(dataset_collection.val_f, batch_size=args.dataset.val_batch_size, shuffle=False, drop_last=False)
     encoder_trainer.test(encoder, test_dataloaders=val_dataloader)
+    logger.info(f'222222222222222222222')
     val_rmse_orig, val_rmse_all = encoder.get_normalised_masked_rmse(dataset_collection.val_f)
     logger.info(f'Val normalised RMSE (all): {val_rmse_all}; Val normalised RMSE (orig): {val_rmse_orig}')
 
@@ -134,9 +149,11 @@ def main(args: DictConfig):
         decoder_trainer = Trainer(gpus=eval(str(args.exp.gpus)), logger=mlf_logger, max_epochs=args.exp.max_epochs,
                                   callbacks=decoder_callbacks, terminate_on_nan=True)
         decoder_trainer.fit(decoder)
+        logger.info(f'33333333333333333333')
 
         # Validation factual rmse
-        val_dataloader = DataLoader(dataset_collection.val_f, batch_size=10 * args.dataset.val_batch_size, shuffle=False)
+        val_dataloader = DataLoader(dataset_collection.val_f, batch_size=10 * args.dataset.val_batch_size, shuffle=False, drop_last=False)
+        logger.info(f'44444444444444444444')
         decoder_trainer.test(decoder, test_dataloaders=val_dataloader)
         # decoder.visualize(dataset_collection.val_f, index=20, artifacts_path=artifacts_path)
         val_rmse_orig, val_rmse_all = decoder.get_normalised_masked_rmse(dataset_collection.val_f)

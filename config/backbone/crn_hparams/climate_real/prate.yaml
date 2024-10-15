@@ -2,23 +2,12 @@
 dataset:
   outcome_list:
     - prate
-model:
 
-  #COSO:
-  CFPnet:
-    optimizer:
-      learning_rate: 0.0001
-    batch_size: 32
-    seq_hidden_units: 128
-    br_size: 72
-    fc_hidden_units: 36
-    dropout_rate: 0.4
-    s_alpha: 0.9
+model:
   encoder:
     optimizer:
       learning_rate: 0.001
-    #batch_size: 256
-    batch_size: 32
+    batch_size: 256
     seq_hidden_units: 144
     br_size: 72
     fc_hidden_units: 36
@@ -28,9 +17,7 @@ model:
   decoder:
     optimizer:
       learning_rate: 0.0001
-    #batch_size: 256
-    batch_size: 32
-    seq_hidden_units: 72
+    batch_size: 256
     br_size: 94
     fc_hidden_units: 188
     dropout_rate: 0.2
@@ -39,4 +26,3 @@ exp:
   weights_ema: False
   balancing: grad_reverse
   max_epochs: 200
-  #max_epochs: 10

@@ -613,6 +613,10 @@ class MIMIC3RealDatasetCollection(RealDatasetCollection):
         active_entries_np = active_entries.values.reshape((len(user_sizes), max(user_sizes), 1))
         logger.info(f'treatments_np: {treatments_np.shape}, outcomes_np: {outcomes_np.shape}, coso_vitals_np: {coso_vitals_np.shape}, active_entries_np: {active_entries_np.shape}1111')
         #             treatments_np: (4250, 60, 1),         outcomes_np: (4250, 60, 1),       coso_vitals_np: (4250, 60, 25),         active_entries_np: (4250, 60, 1)1111
+        treatments_df_np = treatments_np
+        treatments_df_np = treatments_df_np.reshape(4250,60)
+        treatments_df_np = pd.DataFrame(treatments_df_np)
+        logger.info(f'treatments_np head(300): {treatments_df_np.head(300)}')
         COSO_index = find_S_variable(treatments_np, outcomes_np, coso_vitals_np, active_entries_np)
         COSO_index = 16
         if split['val'] > 0.0:
